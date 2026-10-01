@@ -1,19 +1,36 @@
 """
-api/main.py: FastAPI REST API service exposing /predict, /health, and /model-info endpoints.
+api/main.py: Main FastAPI application mounting routers, WebSocket endpoints, and initializing database.
 """
 
-from typing import Dict, Any
-from fastapi import FastAPI, HTTPException
+from contextlib import asynccontextmanager
+from typing import Dict
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
 from api.config import MODEL, FEATURE_LIST, CLASS_LIST, METRICS_DATA
 from api.inference import predict
+from api.db import init_db
+from api.ws import ws_manager
+
+from api.routes import ingest, flows, system
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize database tables on startup
+    init_db()
+    yield
 
 app = FastAPI(
     title="Network Intrusion Detection System API",
     description="Real-time network intrusion detection and classification API service.",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
+
+# Mount Routers
+app.include_router(ingest.router)
+app.include_router(flows.router)
+app.include_router(system.router)
 
 class PredictRequest(BaseModel):
     features: Dict[str, float]
@@ -47,3 +64,16 @@ def predict_endpoint(request: PredictRequest):
         return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.websocket("/ws/flows")
+async def websocket_flows_endpoint(websocket: WebSocket):
+    """
+    WebSocket endpoint broadcasting real-time flow classifications and security alerts.
+    """
+    await ws_manager.connect(websocket)
+    try:
+        while True:
+            # Keep connection open for push events
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)
