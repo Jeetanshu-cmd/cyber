@@ -1,0 +1,96 @@
+{
+  "selected_variant": "with_dst_port",
+  "variant_a_with_dst_port": {
+    "macro_f1": 0.9986700316026909,
+    "report": {
+      "Benign": {
+        "precision": 0.9985977564102564,
+        "recall": 0.9983311081441922,
+        "f1-score": 0.9984644144745627,
+        "support": 29960.0
+      },
+      "BruteForce": {
+        "precision": 0.9977515458122541,
+        "recall": 0.9988745075970737,
+        "f1-score": 0.9983127109111362,
+        "support": 1777.0
+      },
+      "DoS_DDoS": {
+        "precision": 0.9986983512449102,
+        "recall": 0.9987650200267023,
+        "f1-score": 0.9987316845232135,
+        "support": 29960.0
+      },
+      "PortScan": {
+        "precision": 0.9990609291277689,
+        "recall": 0.9992817282722802,
+        "f1-score": 0.9991713165018508,
+        "support": 18099.0
+      },
+      "accuracy": 0.9987217404381172,
+      "macro avg": {
+        "precision": 0.9985271456487974,
+        "recall": 0.9988130910100621,
+        "f1-score": 0.9986700316026909,
+        "support": 79796.0
+      },
+      "weighted avg": {
+        "precision": 0.9987217359083245,
+        "recall": 0.9987217404381172,
+        "f1-score": 0.9987217212721122,
+        "support": 79796.0
+      }
+    }
+  },
+  "variant_b_without_dst_port": {
+    "macro_f1": 0.9903162751564795,
+    "report": {
+      "Benign": {
+        "precision": 0.9951907020239129,
+        "recall": 0.994592790387183,
+        "f1-score": 0.9948916563720744,
+        "support": 29960.0
+      },
+      "BruteForce": {
+        "precision": 0.9592959295929593,
+        "recall": 0.9814293753517164,
+        "f1-score": 0.9702364394993046,
+        "support": 1777.0
+      },
+      "DoS_DDoS": {
+        "precision": 0.9973270965586368,
+        "recall": 0.9963284379172229,
+        "f1-score": 0.9968275171147103,
+        "support": 29960.0
+      },
+      "PortScan": {
+        "precision": 0.9991163150336905,
+        "recall": 0.9995027349577325,
+        "f1-score": 0.9993094876398287,
+        "support": 18099.0
+      },
+      "accuracy": 0.9960649656624392,
+      "macro avg": {
+        "precision": 0.9877325108023,
+        "recall": 0.9929633346534638,
+        "f1-score": 0.9903162751564795,
+        "support": 79796.0
+      },
+      "weighted avg": {
+        "precision": 0.9960838675900376,
+        "recall": 0.9960649656624392,
+        "f1-score": 0.99607146984119,
+        "support": 79796.0
+      }
+    }
+  },
+  "data_sources": {
+    "cicids2017": {
+      "Benign": 150000,
+      "DoS_DDoS": 150000,
+      "PortScan": 90694,
+      "BruteForce": 9083
+    },
+    "local_capture": 0
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "features": [
+    "dst_port",
+    "flow_duration_s",
+    "total_fwd_packets",
+    "total_bwd_packets",
+    "total_fwd_bytes",
+    "total_bwd_bytes",
+    "pkt_len_min",
+    "pkt_len_max",
+    "pkt_len_mean",
+    "pkt_len_std",
+    "flow_bytes_s",
+    "flow_pkts_s",
+    "flow_iat_mean",
+    "flow_iat_max",
+    "syn_flag_cnt",
+    "ack_flag_cnt",
+    "fin_flag_cnt",
+    "rst_flag_cnt",
+    "psh_flag_cnt"
+  ],
+  "classes": [
+    "Benign",
+    "BruteForce",
+    "DoS_DDoS",
+    "PortScan"
+  ],
+  "has_dst_port": true,
+  "selected_variant": "with_dst_port"
+}

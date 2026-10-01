@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pydantic
+sqlalchemy
+pandas
+scikit-learn
+joblib
+pytest
+httpx
+
+# scapy is installed separately per AGENTS.md §10 (step 5), since it needs Npcap/root and shouldn't block the rest of the setup.
