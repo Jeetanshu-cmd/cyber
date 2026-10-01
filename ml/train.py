@@ -3,63 +3,24 @@ ml/train.py: Pipeline to load CICIDS2017 raw dataset, preprocess, clean, split, 
 
 19 Feature Contract (AGENTS.md §3):
 1. dst_port
-2. flow_duration_s (Flow Duration in seconds)
-3. total_fwd_packets
-4. total_bwd_packets
-5. total_fwd_bytes
-6. total_bwd_bytes
-7. pkt_len_min
-8. pkt_len_max
+2. flow_duration_s
+3. fwd_packets
+4. bwd_packets
+5. fwd_bytes
+6. bwd_bytes
+7. bytes_per_sec
+8. packets_per_sec
 9. pkt_len_mean
 10. pkt_len_std
-11. flow_bytes_s
-12. flow_pkts_s
-13. flow_iat_mean (Flow IAT Mean in seconds)
-14. flow_iat_max (Flow IAT Max in seconds)
-15. syn_flag_cnt
-16. ack_flag_cnt
-17. fin_flag_cnt
-18. rst_flag_cnt
-19. psh_flag_cnt
-
-Traced Example (3 raw CICIDS rows -> renamed/converted -> cleaned -> encoded):
-Raw Row 1:
-  Destination Port: 54865, Flow Duration: 3 (us), Total Fwd Packets: 2, Total Backward Packets: 0,
-  Total Length of Fwd Packets: 12, Total Length of Bwd Packets: 0, Min Packet Length: 6, Max Packet Length: 6,
-  Packet Length Mean: 6, Packet Length Std: 0, SYN Flag Count: 0, ACK Flag Count: 0, ...
-  Label: BENIGN
-Renamed & Converted Row 1:
-  dst_port: 54865.0, flow_duration_s: 0.000003, total_fwd_packets: 2.0, total_bwd_packets: 0.0,
-  total_fwd_bytes: 12.0, total_bwd_bytes: 0.0, pkt_len_min: 6.0, pkt_len_max: 6.0, pkt_len_mean: 6.0, ...
-  Label: Benign
-Cleaned Row 1:
-  Passed (no inf/NaN, not a duplicate).
-Encoded Label Row 1:
-  ground_truth_label: "Benign"
-
-Raw Row 2:
-  Destination Port: 80, Flow Duration: 1500000 (us), Total Fwd Packets: 10, ...
-  Label: DoS Hulk
-Renamed & Converted Row 2:
-  dst_port: 80.0, flow_duration_s: 1.5, ...
-  Label: DoS_DDoS
-Cleaned Row 2:
-  Passed.
-
-Raw Row 3:
-  Destination Port: 21, Flow Duration: inf, Total Fwd Packets: 1, ...
-  Label: FTP-Patator
-Renamed & Converted Row 3:
-  dst_port: 21.0, flow_duration_s: inf, ...
-  Label: BruteForce
-Cleaned Row 3:
-  Dropped (contains inf -> NaN).
-
-Time Complexity:
-- Training: O(N_samples * N_trees * N_features * log(N_samples))
-  For N_samples <= 600,000, N_trees = 150, N_features = 19.
-- Single Prediction: O(N_trees * max_depth)
-  For N_trees = 150, typical depth ~ 20-30 operations per prediction (sub-millisecond latency).
+11. pkt_len_max
+12. pkt_len_min
+13. syn_count
+14. ack_count
+15. fin_count
+16. rst_count
+17. psh_count
+18. iat_mean
+19. iat_max
 """
 
 import os
@@ -73,31 +34,52 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay
 
-# Define updated 19 features contract mapping (Raw CICIDS Column Name -> Contract Feature Name)
+# Raw CICIDS Column Name -> AGENTS.md §3 Feature Contract Name
 RAW_TO_CONTRACT = {
     'Destination Port': 'dst_port',
     'Flow Duration': 'flow_duration_s',
-    'Total Fwd Packets': 'total_fwd_packets',
-    'Total Backward Packets': 'total_bwd_packets',
-    'Total Length of Fwd Packets': 'total_fwd_bytes',
-    'Total Length of Bwd Packets': 'total_bwd_bytes',
-    'Min Packet Length': 'pkt_len_min',
-    'Max Packet Length': 'pkt_len_max',
+    'Total Fwd Packets': 'fwd_packets',
+    'Total Backward Packets': 'bwd_packets',
+    'Total Length of Fwd Packets': 'fwd_bytes',
+    'Total Length of Bwd Packets': 'bwd_bytes',
+    'Flow Bytes/s': 'bytes_per_sec',
+    'Flow Packets/s': 'packets_per_sec',
     'Packet Length Mean': 'pkt_len_mean',
     'Packet Length Std': 'pkt_len_std',
-    'Flow Bytes/s': 'flow_bytes_s',
-    'Flow Packets/s': 'flow_pkts_s',
-    'Flow IAT Mean': 'flow_iat_mean',
-    'Flow IAT Max': 'flow_iat_max',
-    'SYN Flag Count': 'syn_flag_cnt',
-    'ACK Flag Count': 'ack_flag_cnt',
-    'FIN Flag Count': 'fin_flag_cnt',
-    'RST Flag Count': 'rst_flag_cnt',
-    'PSH Flag Count': 'psh_flag_cnt',
+    'Max Packet Length': 'pkt_len_max',
+    'Min Packet Length': 'pkt_len_min',
+    'SYN Flag Count': 'syn_count',
+    'ACK Flag Count': 'ack_count',
+    'FIN Flag Count': 'fin_count',
+    'RST Flag Count': 'rst_count',
+    'PSH Flag Count': 'psh_count',
+    'Flow IAT Mean': 'iat_mean',
+    'Flow IAT Max': 'iat_max',
 }
 
-FEATURE_ORDER = list(RAW_TO_CONTRACT.values())
-MICROSECOND_COLUMNS = ['flow_duration_s', 'flow_iat_mean', 'flow_iat_max']
+FEATURE_ORDER = [
+    'dst_port',
+    'flow_duration_s',
+    'fwd_packets',
+    'bwd_packets',
+    'fwd_bytes',
+    'bwd_bytes',
+    'bytes_per_sec',
+    'packets_per_sec',
+    'pkt_len_mean',
+    'pkt_len_std',
+    'pkt_len_max',
+    'pkt_len_min',
+    'syn_count',
+    'ack_count',
+    'fin_count',
+    'rst_count',
+    'psh_count',
+    'iat_mean',
+    'iat_max'
+]
+
+MICROSECOND_COLUMNS = ['flow_duration_s', 'iat_mean', 'iat_max']
 
 LABEL_MAP = {
     'BENIGN': 'Benign',

@@ -3,8 +3,7 @@ __pycache__/
 *.pyc
 node_modules/
 dist/
-data/*.csv
-data/local/
+data/
 ml/artifacts/*.pkl
 !ml/artifacts/features.json
 !ml/artifacts/metrics.json
