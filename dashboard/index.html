@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-Powered NIDS — Live Execution Environment</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Dotted Background Grid Container -->
+  <div class="app-layout">
+    
+    <!-- Top Header Navigation & Meta -->
+    <header class="top-header">
+      <div class="header-left">
+        <div class="meta-tag">
+          <span class="status-dot-pulse"></span>
+          <span>NETWORK SENSOR — LIVE TELEMETRY</span>
+        </div>
+        <h1 class="page-title">Live Execution Environment</h1>
+        <p class="page-subtitle">Real-time ML flow classification, intrusion detection, and 19-feature network telemetry analysis.</p>
+      </div>
+      
+      <div class="header-right">
+        <button id="btn-orchestrator" class="btn btn-secondary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          <span>Live Orchestrator</span>
+        </button>
+        <button id="btn-test-connection" class="btn btn-secondary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+          <span>Test API Connection</span>
+        </button>
+        <button id="btn-pause-stream" class="btn btn-primary">
+          <svg id="stream-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="4" width="4" height="16"></rect>
+            <rect x="14" y="4" width="4" height="16"></rect>
+          </svg>
+          <span id="stream-btn-text">Pause Stream</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Topology & Node Status Bar -->
+    <section class="card topology-card">
+      <div class="topology-header">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+          <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+          <line x1="6" y1="6" x2="6.01" y2="6"></line>
+          <line x1="6" y1="18" x2="6.01" y2="18"></line>
+        </svg>
+        <span class="topology-title">Testbed Node Topology:</span>
+        <span id="topology-status-text" class="topology-status">Connected to NIDS API Engine</span>
+      </div>
+      <div class="node-chips">
+        <div class="node-chip">
+          <span class="chip-dot dot-blue"></span>
+          <span class="chip-name">API Server</span>
+          <span class="chip-ip">localhost:8000</span>
+        </div>
+        <div class="node-chip">
+          <span class="chip-dot dot-green"></span>
+          <span class="chip-name">WebSocket</span>
+          <span class="chip-ip" id="ws-status-chip">/ws/flows</span>
+        </div>
+        <div class="node-chip">
+          <span class="chip-dot dot-purple"></span>
+          <span class="chip-name">ML Classifier</span>
+          <span class="chip-ip">Random Forest (19 feat)</span>
+        </div>
+        <div class="node-chip">
+          <span class="chip-dot dot-amber"></span>
+          <span class="chip-name">Alert Engine</span>
+          <span class="chip-ip">Threshold 85% / 30s dedup</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Notice Callout -->
+    <div class="info-callout">
+      <div class="callout-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+      </div>
+      <div class="callout-text">
+        <strong>Telemetry Active:</strong> The NIDS engine classifies network flows into <strong>Benign</strong>, <strong>DoS/DDoS</strong>, <strong>PortScan</strong>, and <strong>BruteForce</strong> based on statistical packet lengths, inter-arrival times, and TCP flag profiles.
+      </div>
+    </div>
+
+    <!-- Quick Stats Grid -->
+    <section class="stats-overview">
+      <div class="card stat-card">
+        <div class="stat-label">TOTAL FLOWS INGESTED</div>
+        <div class="stat-value" id="stat-total-flows">0</div>
+        <div class="stat-subtext text-neutral">Live stream telemetry</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-label">BENIGN TRAFFIC</div>
+        <div class="stat-value text-green" id="stat-benign-count">0</div>
+        <div class="stat-subtext" id="stat-benign-pct">0.0% of total</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-label">THREATS DETECTED</div>
+        <div class="stat-value text-red" id="stat-threat-count">0</div>
+        <div class="stat-subtext" id="stat-threat-pct">0.0% attack rate</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-label">ACTIVE ALERTS FIRED</div>
+        <div class="stat-value text-amber" id="stat-alert-count">0</div>
+        <div class="stat-subtext">Confidence &gt; 85%</div>
+      </div>
+    </section>
+
+    <!-- Main Workspace Grid: Terminal Table + Analytics Chart -->
+    <div class="dashboard-grid">
+      
+      <!-- Live Table Terminal Panel Card (Left / Main) -->
+      <section class="card terminal-panel live-flow-panel">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="dot dot-close"></span>
+            <span class="dot dot-minimize"></span>
+            <span class="dot dot-maximize"></span>
+            <span class="terminal-title">LIVE NETWORK FLOW INGESTION &amp; CLASSIFICATION</span>
+          </div>
+          <div class="terminal-meta">
+            <span id="ws-badge" class="badge badge-live">LIVE</span>
+          </div>
+        </div>
+
+        <div class="terminal-table-container">
+          <table class="flow-table" id="flow-table">
+            <thead>
+              <tr>
+                <th>TIMESTAMP</th>
+                <th>SRC IP</th>
+                <th>DST IP:PORT</th>
+                <th>CLASSIFICATION</th>
+                <th>CONFIDENCE</th>
+                <th>TOP INFLUENCER</th>
+              </tr>
+            </thead>
+            <tbody id="flow-table-body">
+              <tr class="empty-state-row">
+                <td colspan="6" class="empty-state">
+                  <div class="empty-state-content">
+                    <span class="pulse-ring"></span>
+                    <span>Awaiting network flow events from WebSocket / API...</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Analytics & Traffic Distribution (Right) -->
+      <section class="card terminal-panel chart-panel">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="dot dot-close"></span>
+            <span class="dot dot-minimize"></span>
+            <span class="dot dot-maximize"></span>
+            <span class="terminal-title">TRAFFIC COMPOSITION</span>
+          </div>
+          <div class="terminal-meta">
+            <span class="badge badge-neutral">DOUGHNUT</span>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <div class="canvas-wrapper">
+            <canvas id="trafficDoughnutChart" width="240" height="240"></canvas>
+            <div class="chart-center-label">
+              <span class="chart-center-val" id="chart-center-val">0</span>
+              <span class="chart-center-desc">Total Flows</span>
+            </div>
+          </div>
+          
+          <div class="chart-legend" id="chart-legend">
+            <div class="legend-item">
+              <span class="legend-color-box bg-benign"></span>
+              <span class="legend-name">Benign</span>
+              <span class="legend-count" id="legend-benign-val">0</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color-box bg-dos"></span>
+              <span class="legend-name">DoS / DDoS</span>
+              <span class="legend-count" id="legend-dos-val">0</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color-box bg-portscan"></span>
+              <span class="legend-name">PortScan</span>
+              <span class="legend-count" id="legend-portscan-val">0</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color-box bg-bruteforce"></span>
+              <span class="legend-name">BruteForce</span>
+              <span class="legend-count" id="legend-bruteforce-val">0</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Security Alerts Vault Section -->
+    <section class="card execution-vault-card">
+      <div class="vault-header">
+        <div class="vault-title-group">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          <span class="vault-title">EXECUTION VAULT / SECURITY ALERTS (<span id="vault-count">0</span>)</span>
+        </div>
+        <button id="btn-clear-alerts" class="btn-text">Clear Log</button>
+      </div>
+
+      <div class="vault-feed" id="vault-feed">
+        <div class="vault-empty" id="vault-empty-placeholder">No security alerts recorded yet. Threat alerts (confidence &gt; 85%) will log here in real time.</div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Real-time Alert Toast Floating Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
